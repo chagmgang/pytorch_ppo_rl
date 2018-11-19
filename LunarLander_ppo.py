@@ -12,6 +12,7 @@ import cv2
 
 from model import *
 
+from ppo_agent import MlpActorAgent, make_train_data
 import torch.optim as optim
 from torch.multiprocessing import Pipe, Process
 
@@ -67,6 +68,7 @@ class Environment(Process):
         obs = self.env.reset()
         return obs
 
+'''
 class ActorAgent(object):
     def __init__(
             self,
@@ -161,7 +163,8 @@ class ActorAgent(object):
                 torch.nn.utils.clip_grad_norm_(
                     self.model.parameters(), clip_grad_norm)
                 self.optimizer.step()
-
+'''
+'''
 def make_train_data(reward, done, value, next_value):
     num_step = len(reward)
     discounted_return = np.empty([num_step])
@@ -197,7 +200,7 @@ def make_train_data(reward, done, value, next_value):
         adv = (adv - adv.mean()) / (adv.std() + stable_eps)
 
     return discounted_return, adv
-
+'''
 
 if __name__ == '__main__':
 
@@ -211,7 +214,7 @@ if __name__ == '__main__':
     life_done = True
     use_noisy_net = True
 
-    num_worker = 1
+    num_worker = 8
 
     num_step = 128
     ppo_eps = 0.1
@@ -228,7 +231,9 @@ if __name__ == '__main__':
     gamma = 0.99
     clip_grad_norm = 0.5
 
-    agent = ActorAgent(
+    agent = MlpActorAgent(
+        8,
+        4,
         num_step,
         gamma,
         use_cuda=use_cuda,
@@ -293,7 +298,6 @@ if __name__ == '__main__':
                     print('episodes:', sample_episode, '| score:', score)
                     writer.add_scalar('data/reward', score, sample_episode)
                     score = 0
-
         total_state = np.stack(total_state).transpose(
             [1, 0, 2]).reshape([-1, 8])
         total_next_state = np.stack(total_next_state).transpose(
@@ -301,7 +305,6 @@ if __name__ == '__main__':
         total_reward = np.stack(total_reward).transpose().reshape([-1])
         total_action = np.stack(total_action).transpose().reshape([-1])
         total_done = np.stack(total_done).transpose().reshape([-1])
-
         value, next_value, policy = agent.forward_transition(
             total_state, total_next_state)
         total_target = []
