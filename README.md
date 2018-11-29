@@ -36,7 +36,10 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 * With no environment Reward
 * Because the game initial key is not selected, the peak point and performance drop is generated.
 
-###### BreakoutDeterministic-v4
+###### BreakoutNoFrameskip-v4(handled by custom environment)
+<div align="center">
+  <img src="source/breakout_result_icm.png" width="50%" height='300'>
+</div>
 
 ## Reference
 [1] [mario_rl](https://github.com/jcwleo/mario_rl)
