@@ -50,3 +50,5 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 [4] [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363)
 
 [5] [Large-Scale Study of Curiosity-Driven Learning](https://arxiv.org/abs/1808.04355)
+
+[6] [curiosity-driven-exploration-pytorch](https://github.com/jcwleo/curiosity-driven-exploration-pytorch)
