@@ -215,39 +215,3 @@ class MlpActorAgent(object):
                 torch.nn.utils.clip_grad_norm_(
                     self.model.parameters(), self.clip_grad_norm)
                 self.optimizer.step()
-
-def make_train_data(reward, done, value, next_value):
-    num_step = len(reward)
-    discounted_return = np.empty([num_step])
-
-    use_gae = True
-    use_standardization = False
-    gamma = 0.99
-    lam = 0.95
-    stable_eps = 1e-30
-
-    # Discounted Return
-    if use_gae:
-        gae = 0
-        for t in range(num_step - 1, -1, -1):
-            delta = reward[t] + gamma * \
-                next_value[t] * (1 - done[t]) - value[t]
-            gae = delta + gamma * lam * (1 - done[t]) * gae
-
-            discounted_return[t] = gae + value[t]
-
-        # For Actor
-        adv = discounted_return - value
-
-    else:
-        for t in range(num_step - 1, -1, -1):
-            running_add = reward[t] + gamma * next_value[t] * (1 - done[t])
-            discounted_return[t] = running_add
-
-        # For Actor
-        adv = discounted_return - value
-
-    if use_standardization:
-        adv = (adv - adv.mean()) / (adv.std() + stable_eps)
-
-    return discounted_return, adv

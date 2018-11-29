@@ -29,6 +29,14 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/breakout_result.png" width="50%" height='300'>
 </div>
 
+# 3. Multi-processing CNN Proximal Policy Opitimization with Intrinsic Curiosity Module
+
+* Script : Breakout_ppo_icm.py
+* Environment : BreakoutNoFrameskip-v4(handled by custom environment)
+* With no environment Reward
+* Because the game initial key is not selected, the peak point and performance drop is generated.
+
+###### BreakoutDeterministic-v4
 
 ## Reference
 [1] [mario_rl](https://github.com/jcwleo/mario_rl)
@@ -38,3 +46,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 [2] [Efficient Parallel Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1705.04862)
 
 [3] [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
+
+[4] [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363)
+
+[5] [Large-Scale Study of Curiosity-Driven Learning](https://arxiv.org/abs/1808.04355)

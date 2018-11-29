@@ -45,7 +45,7 @@ class ICMAgent(object):
         self.clip_grad_norm = clip_grad_norm
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
-        self.icm = ICMModel(input_size, output_size, use_cuda)
+        self.icm = ICMModel(input_size, output_size)
         self.optimizer = optim.Adam(list(self.model.parameters()) + list(self.icm.parameters()),
                                     lr=learning_rate)
         self.icm = self.icm.to(self.device)

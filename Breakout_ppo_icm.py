@@ -2,6 +2,7 @@ from agents import *
 from envs import *
 from utils import *
 from config import *
+from ppo_agent import *
 from torch.multiprocessing import Pipe
 
 from tensorboardX import SummaryWriter
@@ -41,19 +42,18 @@ def main():
     use_noisy_net = default_config.getboolean('UseNoisyNet')
 
     lam = float(default_config['Lambda'])
-    num_worker = int(default_config['NumEnv'])
+    num_worker = 32
 
-    num_step = int(default_config['NumStep'])
+    num_step = 128
 
     ppo_eps = float(default_config['PPOEps'])
     epoch = int(default_config['Epoch'])
     mini_batch = int(default_config['MiniBatch'])
-    batch_size = int(num_step * num_worker / mini_batch)
+    batch_size = 256
     learning_rate = float(default_config['LearningRate'])
     entropy_coef = float(default_config['Entropy'])
     gamma = float(default_config['Gamma'])
     eta = float(default_config['ETA'])
-
     clip_grad_norm = float(default_config['ClipGradNorm'])
 
     reward_rms = RunningMeanStd()
@@ -202,6 +202,7 @@ def main():
         total_state = np.stack(total_state).transpose([1, 0, 2, 3, 4]).reshape([-1, 4, 84, 84])
         total_next_state = np.stack(total_next_state).transpose([1, 0, 2, 3, 4]).reshape([-1, 4, 84, 84])
         total_action = np.stack(total_action).transpose().reshape([-1])
+        total_reward = np.stack(total_reward).transpose()
         total_done = np.stack(total_done).transpose()
         total_values = np.stack(total_values).transpose()
         total_logging_policy = np.vstack(total_policy)
@@ -224,7 +225,7 @@ def main():
         writer.add_scalar('data/max_prob', softmax(total_logging_policy).max(1).mean(), sample_episode)
 
         # Step 3. make target and advantage
-        target, adv = make_train_data(total_int_reward,
+        target, adv = make_train_data_icm(total_int_reward,
                                       np.zeros_like(total_int_reward),
                                       total_values,
                                       gamma,
@@ -235,6 +236,7 @@ def main():
         # -----------------------------------------------
 
         # Step 5. Training!
+        print('training')
         agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),
                           np.float32(total_next_state) - obs_rms.mean / np.sqrt(obs_rms.var),
                           target, total_action,

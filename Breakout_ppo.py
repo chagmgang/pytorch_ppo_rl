@@ -17,7 +17,8 @@ from torch.multiprocessing import Pipe, Process
 
 from collections import deque
 from sklearn.utils import shuffle
-from ppo_agent import CNNActorAgent, make_train_data
+from ppo_agent import CNNActorAgent
+from utils import make_train_data
 from tensorboardX import SummaryWriter
 from torch.distributions.categorical import Categorical
 

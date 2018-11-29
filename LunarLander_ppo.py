@@ -12,13 +12,13 @@ import cv2
 
 from model import *
 
-from ppo_agent import MlpActorAgent, make_train_data
+from ppo_agent import MlpActorAgent
+from utils import make_train_data
 import torch.optim as optim
 from torch.multiprocessing import Pipe, Process
 
 from collections import deque
 from sklearn.utils import shuffle
-#from utils import make_train_data, ActorAgent
 from tensorboardX import SummaryWriter
 from torch.distributions.categorical import Categorical
 
