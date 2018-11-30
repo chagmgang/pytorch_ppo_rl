@@ -35,9 +35,13 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 * Environment : BreakoutNoFrameskip-v4(handled by custom environment)
 * With no environment Reward
 * Because the game initial key is not selected, the peak point and performance drop is generated.
+* Left : Comparison between (extrinsic reward and intrinsic, oragne) and (only intrinsic reward, gray), the average of three times of experiment
+* Right : only intrinsic reward
+* 32 process
 
 ###### BreakoutNoFrameskip-v4(handled by custom environment)
 <div align="center">
+  <img src="source/result_icm.png" width="49%" height='300'>
   <img src="source/breakout_result_icm.png" width="50%" height='300'>
 </div>
 
