@@ -52,7 +52,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 * With no environment Reward
 * 32 process
 
-###### BreakoutNoFrameskip-v4(handled by custom environment)
+###### MountainCart-v0
 <div align="center">
   <img src="source/mountaincar_icm.gif" width="50%" height='300'>
   <img src="source/mountaincar_icm_result.png" width="49%" height='300'>
