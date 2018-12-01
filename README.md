@@ -45,6 +45,19 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/breakout_result_icm.png" width="50%" height='300'>
 </div>
 
+# 3. Multi-processing Mlp Proximal Policy Opitimization with Intrinsic Curiosity Module
+
+* Script : MountainCar_ppo_icm.py
+* Environment : MountainCart-v0
+* With no environment Reward
+* 32 process
+
+###### BreakoutNoFrameskip-v4(handled by custom environment)
+<div align="center">
+  <img src="source/mountaincar_icm.gif" width="50%" height='300'>
+  <img src="source/mountaincar_icm_result.png" width="49%" height='300'>
+</div>
+
 ## Reference
 [1] [mario_rl](https://github.com/jcwleo/mario_rl)
 

@@ -27,6 +27,83 @@ class MlpActorCriticNetwork(nn.Module):
 
         return policy, value
 
+
+
+class MlpICMModel(nn.Module):
+    def __init__(self, input_size, output_size, use_cuda=True):
+        super(MlpICMModel, self).__init__()
+
+        self.input_size = input_size
+        self.output_size = output_size
+        self.device = torch.device('cuda' if use_cuda else 'cpu')
+
+        self.feature = nn.Sequential(
+            nn.Linear(self.input_size, 100),
+            nn.LeakyReLU(),
+            nn.Linear(100, 100)
+        )
+
+        self.inverse_net = nn.Sequential(
+            nn.Linear(100 * 2, 100),
+            nn.ReLU(),
+            nn.Linear(100, self.output_size)
+        )
+
+        self.residual = [nn.Sequential(
+            nn.Linear(self.output_size + 100, 100),
+            nn.LeakyReLU(),
+            nn.Linear(100, 100),
+        ).to(self.device)] * 8
+
+        self.forward_net_1 = nn.Sequential(
+            nn.Linear(self.output_size + 100, 100),
+            nn.LeakyReLU()
+        )
+        self.forward_net_2 = nn.Sequential(
+            nn.Linear(output_size + 100, 100),
+        )
+
+    def forward(self, inputs):
+        state, next_state, action = inputs
+
+        encode_state = self.feature(state)
+        encode_next_state = self.feature(next_state)
+        # get pred action
+        pred_action = torch.cat((encode_state, encode_next_state), 1)
+        pred_action = self.inverse_net(pred_action)
+        # ---------------------
+
+        # get pred next state
+        pred_next_state_feature_orig = torch.cat((encode_state, action), 1)
+        pred_next_state_feature_orig = self.forward_net_1(pred_next_state_feature_orig)
+
+        # residual
+        for i in range(4):
+            pred_next_state_feature = self.residual[i * 2](torch.cat((pred_next_state_feature_orig, action), 1))
+            pred_next_state_feature_orig = self.residual[i * 2 + 1](
+                torch.cat((pred_next_state_feature, action), 1)) + pred_next_state_feature_orig
+
+        pred_next_state_feature = self.forward_net_2(torch.cat((pred_next_state_feature_orig, action), 1))
+
+        real_next_state_feature = encode_next_state
+        return real_next_state_feature, pred_next_state_feature, pred_action
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class CnnActorCriticNetwork(nn.Module):
     def __init__(self):
         super(CnnActorCriticNetwork, self).__init__()

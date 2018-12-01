@@ -4,7 +4,6 @@ from utils import *
 from config import *
 from ppo_agent import *
 from torch.multiprocessing import Pipe
-from file_writer import open_file_and_save
 from tensorboardX import SummaryWriter
 
 import numpy as np
@@ -190,7 +189,6 @@ def main():
                 writer.add_scalar('data/reward_per_epi', sample_rall, sample_episode)
                 writer.add_scalar('data/reward_per_rollout', sample_rall, global_update)
                 writer.add_scalar('data/step', sample_step, sample_episode)
-                open_file_and_save('ext_2.csv', [sample_rall])
                 sample_rall = 0
                 sample_step = 0
                 sample_i_rall = 0
@@ -208,6 +206,8 @@ def main():
         total_values = np.stack(total_values).transpose()
         total_logging_policy = np.vstack(total_policy)
         total_int_reward = np.stack(total_int_reward).transpose()
+
+        print(total_state.shape)
 
         # Step 2. calculate intrinsic reward
         # running mean intrinsic reward
