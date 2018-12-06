@@ -40,10 +40,10 @@ class MlpICMAgent(object):
             use_gae=True,
             use_cuda=False,
             use_noisy_net=False):
-        self.model = MlpActorCriticNetwork(2, 3)
-        self.num_env = num_env
         self.output_size = output_size
         self.input_size = input_size
+        self.model = MlpActorCriticNetwork(self.input_size, self.output_size)
+        self.num_env = num_env
         self.num_step = num_step
         self.gamma = gamma
         self.lam = lam
@@ -56,7 +56,7 @@ class MlpICMAgent(object):
         self.clip_grad_norm = clip_grad_norm
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
-        self.icm = MlpICMModel(2, 3)
+        self.icm = MlpICMModel(self.input_size, self.output_size)
         self.optimizer = optim.Adam(list(self.model.parameters()) + list(self.icm.parameters()),
                                     lr=learning_rate)
         self.icm = self.icm.to(self.device)

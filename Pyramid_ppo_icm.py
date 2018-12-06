@@ -4,15 +4,19 @@ from config import *
 from ppo_agent import *
 from torch.multiprocessing import Pipe
 from tensorboardX import SummaryWriter
-
+from mlagents.envs import UnityEnvironment
 import numpy as np
+import time
 
 
 class Environment(Process):
     def __init__(self, is_render, env_idx, child_conn):
         super(Environment, self).__init__()
         self.daemon = True
-        self.env = gym.make('MountainCar-v0')
+        #self.env = gym.make('MountainCar-v0')
+        self.env = UnityEnvironment(file_name='pyramid_linux_16/pyramid_linux')
+        self.default_brain = self.env.brain_names[0]
+        self.brain = self.env.brains[self.default_brain]
         self.is_render = is_render
         self.env_idx = env_idx
         self.steps = 0
@@ -27,18 +31,28 @@ class Environment(Process):
         super(Environment, self).run()
         while True:
             action = self.child_conn.recv()
-            if self.is_render:
-                self.env.render()
+            '''
+            a = []
+            for i in action:
+                if i == 0:
+                    a.append(1)
+                elif i == 1:
+                    a.append(3)
+                elif i == 2:
+                    a.append(4)
+            env_info = self.env.step(a)[self.default_brain]
+            '''
+            env_info = self.env.step(action)[self.default_brain]
+            obs = env_info.vector_observations
+            reward = env_info.rewards
+            done = env_info.local_done
 
-            obs, reward, done, _ = self.env.step(action)
-
-            self.rall += reward
             self.steps += 1
 
-            if done:
+            if done[0]:
                 print("[Episode {}({})] Step: {}  Reward: {}".format(
                     self.episode, self.env_idx, self.steps, self.rall))
-                obs = self.env.reset()
+                #obs = self.reset()
                 self.rall = 0
                 self.steps = 0
                 self.episode += 1
@@ -47,57 +61,63 @@ class Environment(Process):
 
     def reset(self):
         self.steps = 0
-        s = self.env.reset()
+        env_info = self.env.reset(train_mode=True)[self.default_brain]
+        s = env_info.vector_observations
         return s
     
 if __name__ == '__main__':
+    real_num_worker = 1
     num_worker = 16
     works = []
     parent_conns = []
     child_conns = []
-    pre_obs_norm_step = 10000
+    pre_obs_norm_step = 50000
     
-    input_size = 2
-    output_size = 3
-    num_step = 256
+    input_size = 172
+    output_size = 5
+    num_step = 1024
     gamma = 0.99
     is_render = True
 
     reward_rms = RunningMeanStd()
-    obs_rms = RunningMeanStd(1, 2)
+    obs_rms = RunningMeanStd(1, 172)
     discounted_reward = RewardForwardFilter(gamma)
     agent = MlpICMAgent(input_size, output_size, num_worker,
                         num_step, gamma, use_cuda=True)
-    output_size = 3
 
-    for idx in range(num_worker):
+    print('make process')
+    for idx in range(real_num_worker):
         parent_conn, child_conn = Pipe()
         work = Environment(is_render, idx, child_conn)
         work.start()
         works.append(work)
         child_conns.append(child_conn)
         parent_conns.append(parent_conn)
-
+    print('make process done')
+    
+    
     steps = 0
     next_obs = []
     print('Start to initialize observation normalization ...')
     while steps < pre_obs_norm_step:
         steps += num_worker
-        actions = np.random.randint(0, output_size, size=(num_worker, ))
+        actions = np.random.randint(output_size, size=num_worker)
+        actions = [actions]
         for parent_conn, action in zip(parent_conns, actions):
             parent_conn.send(action)
 
         for parent_conn in parent_conns:
             s, r, d = parent_conn.recv()
-            next_obs.append(s)
-
+            for i in range(num_worker):
+                next_obs.append(s[i])
         print('initializing...:', steps, '/', pre_obs_norm_step)
 
     next_obs = np.stack(next_obs)
     obs_rms.update(next_obs)
     print('End to initialize')
+    
 
-    states = np.zeros([num_worker, 2])
+    states = np.zeros([num_worker, 172])
     global_update = 0
     global_step = 0
     sample_i_rall = 0
@@ -105,7 +125,6 @@ if __name__ == '__main__':
     sample_env_idx = 0
     sample_rall = 0
     writer = SummaryWriter()
-
 
     while True:
         total_state, total_reward, total_done, total_next_state, \
@@ -115,32 +134,30 @@ if __name__ == '__main__':
         global_update += 1
 
         for _ in range(num_step):
-            #agent.model.eval(), agent.icm.eval()
             actions, value, policy = agent.get_action((np.float32(states) - obs_rms.mean)/np.sqrt(obs_rms.var))
-
-            for parent_conn, action in zip(parent_conns, actions):
+            a = [actions]
+            for parent_conn, action in zip(parent_conns, a):
                 parent_conn.send(action)
-
-            next_states, rewards, dones, real_dones, next_obs = [], [], [], [] ,[]
+            next_states, rewards, dones, real_dones, next_obs = [], [], [], [], []
             for parent_conn in parent_conns:
                 s, r, d = parent_conn.recv()
-                next_states.append(s)
-                rewards.append(r)
-                dones.append(d)
-
+                for i in range(num_worker):
+                    next_states.append(s[i])
+                    rewards.append(r[i])
+                    dones.append(d[i])
+            
             next_states = np.stack(next_states)
             rewards = np.hstack(rewards)
-            dones = np.hstack(dones)        
+            dones = np.hstack(dones)
 
             intrinsic_reward = agent.compute_intrinsic_reward(
                             (states - obs_rms.mean)/np.sqrt(obs_rms.var),
                             (next_states - obs_rms.mean)/np.sqrt(obs_rms.var),
                             actions)
-
             intrinsic_reward = np.hstack(intrinsic_reward)
-
+            
             sample_i_rall += intrinsic_reward[sample_env_idx]
-            sample_rall += rewards[sample_env_idx]
+            sample_i_rall += rewards[sample_env_idx]
 
             total_int_reward.append(intrinsic_reward)
             total_state.append(states)
@@ -162,14 +179,14 @@ if __name__ == '__main__':
         _, value, _ = agent.get_action(np.float32(states) - obs_rms.mean / np.sqrt(obs_rms.var))
         total_values.append(value)
 
-        total_state = np.stack(total_state).transpose([1, 0, 2]).reshape([-1, 2])
-        total_next_state = np.stack(total_next_state).transpose([1, 0, 2]).reshape([-1, 2])
+        total_state = np.stack(total_state).transpose([1, 0, 2]).reshape([-1, 172])
+        total_next_state = np.stack(total_next_state).transpose([1, 0, 2]).reshape([-1, 172])
         total_action = np.stack(total_action).transpose().reshape([-1])
         total_reward = np.stack(total_reward).transpose()
         total_done = np.stack(total_done).transpose()
         total_values = np.stack(total_values).transpose()
         total_logging_policy = np.vstack(total_policy)
-
+        
         total_int_reward = np.stack(total_int_reward).transpose()
         total_reward_per_env = np.array([discounted_reward.update(reward_per_step) for reward_per_step in
                                          total_int_reward.T])
@@ -182,8 +199,6 @@ if __name__ == '__main__':
         writer.add_scalar('data/int_reward_per_rollout', np.sum(total_int_reward) / num_worker, global_update)
         writer.add_scalar('data/max_prob', softmax(total_logging_policy).max(1).mean(), sample_episode)
 
-        print(total_int_reward.shape)
-        print(total_values.shape)
         target, adv = make_train_data_icm(total_int_reward,
                                         np.zeros_like(total_int_reward),
                                         total_values,
@@ -192,8 +207,9 @@ if __name__ == '__main__':
                                         num_worker)
         adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
 
+        #obs_rms.update(total_next_state)
+        #print(obs_rms.count)
         print('training')
-        #agent.model.train(), agent.icm.train()
         agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),
                           np.float32(total_next_state) - obs_rms.mean / np.sqrt(obs_rms.var),
                           target, total_action,

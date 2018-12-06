@@ -13,15 +13,23 @@ class Flatten(nn.Module):
 class MlpActorCriticNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(MlpActorCriticNetwork, self).__init__()
-        self.com_layer1 = nn.Linear(input_size, 100)
-        self.com_layer2 = nn.Linear(100, 100)
+        self.com_layer1 = nn.Linear(input_size, 512)
+        self.batch_1 = nn.BatchNorm1d(512)
+        self.com_layer2 = nn.Linear(512, 512)
+        self.batch_2 = nn.BatchNorm1d(512)
+        self.com_layer3 = nn.Linear(512, 512)
+        self.batch_3 = nn.BatchNorm1d(512)
+        self.com_layer4 = nn.Linear(512, 512)
+        self.batch_4 = nn.BatchNorm1d(512)
 
-        self.actor = nn.Linear(100, output_size)
-        self.critic = nn.Linear(100, 1)
+        self.actor = nn.Linear(512, output_size)
+        self.critic = nn.Linear(512, 1)
 
     def forward(self, x):
-        x = F.relu(self.com_layer1(x))
-        x = F.relu(self.com_layer2(x))
+        x = F.relu(self.batch_1(self.com_layer1(x)))
+        x = F.relu(self.batch_2(self.com_layer2(x)))
+        x = F.relu(self.batch_3(self.com_layer3(x)))
+        x = F.relu(self.batch_4(self.com_layer4(x)))
         policy = self.actor(x)
         value = self.critic(x)
 
@@ -38,29 +46,36 @@ class MlpICMModel(nn.Module):
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
         self.feature = nn.Sequential(
-            nn.Linear(self.input_size, 100),
+            nn.Linear(self.input_size, 512),
+            nn.BatchNorm1d(512),
             nn.LeakyReLU(),
-            nn.Linear(100, 100)
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 512),
         )
 
         self.inverse_net = nn.Sequential(
-            nn.Linear(100 * 2, 100),
+            nn.Linear(512 * 2, 512),
             nn.ReLU(),
-            nn.Linear(100, self.output_size)
+            nn.Linear(512, self.output_size)
         )
 
         self.residual = [nn.Sequential(
-            nn.Linear(self.output_size + 100, 100),
+            nn.Linear(self.output_size + 512, 512),
             nn.LeakyReLU(),
-            nn.Linear(100, 100),
+            nn.Linear(512, 512),
         ).to(self.device)] * 8
 
         self.forward_net_1 = nn.Sequential(
-            nn.Linear(self.output_size + 100, 100),
+            nn.Linear(self.output_size + 512, 512),
             nn.LeakyReLU()
         )
         self.forward_net_2 = nn.Sequential(
-            nn.Linear(output_size + 100, 100),
+            nn.Linear(output_size + 512, 512),
         )
 
     def forward(self, inputs):
