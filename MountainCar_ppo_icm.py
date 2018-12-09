@@ -61,7 +61,7 @@ if __name__ == '__main__':
     output_size = 3
     num_step = 256
     gamma = 0.99
-    is_render = True
+    is_render = False
 
     reward_rms = RunningMeanStd()
     obs_rms = RunningMeanStd(1, 2)
