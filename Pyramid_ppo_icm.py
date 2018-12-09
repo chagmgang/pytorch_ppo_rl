@@ -52,7 +52,7 @@ class Environment(Process):
             if done[0]:
                 print("[Episode {}({})] Step: {}  Reward: {}".format(
                     self.episode, self.env_idx, self.steps, self.rall))
-                #obs = self.reset()
+                obs = self.reset()
                 self.rall = 0
                 self.steps = 0
                 self.episode += 1
@@ -71,11 +71,11 @@ if __name__ == '__main__':
     works = []
     parent_conns = []
     child_conns = []
-    pre_obs_norm_step = 50000
+    pre_obs_norm_step = 10000
     
     input_size = 172
     output_size = 5
-    num_step = 1024
+    num_step = 256
     gamma = 0.99
     is_render = True
 
@@ -157,7 +157,7 @@ if __name__ == '__main__':
             intrinsic_reward = np.hstack(intrinsic_reward)
             
             sample_i_rall += intrinsic_reward[sample_env_idx]
-            sample_i_rall += rewards[sample_env_idx]
+            sample_rall += rewards[sample_env_idx]
 
             total_int_reward.append(intrinsic_reward)
             total_state.append(states)
@@ -188,6 +188,7 @@ if __name__ == '__main__':
         total_logging_policy = np.vstack(total_policy)
         
         total_int_reward = np.stack(total_int_reward).transpose()
+        total_int_reward *= 5
         total_reward_per_env = np.array([discounted_reward.update(reward_per_step) for reward_per_step in
                                          total_int_reward.T])
         mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
@@ -205,9 +206,10 @@ if __name__ == '__main__':
                                         gamma,
                                         num_step,
                                         num_worker)
+
         adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
 
-        #obs_rms.update(total_next_state)
+        obs_rms.update(total_next_state)
         #print(obs_rms.count)
         print('training')
         agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),

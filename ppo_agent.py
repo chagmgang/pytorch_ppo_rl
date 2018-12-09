@@ -35,7 +35,7 @@ class MlpICMAgent(object):
             clip_grad_norm=0.5,
             epoch=3,
             batch_size=128,
-            ppo_eps=0.1,
+            ppo_eps=0.2,
             eta=0.01,
             use_gae=True,
             use_cuda=False,

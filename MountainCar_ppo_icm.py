@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
             next_states = np.stack(next_states)
             rewards = np.hstack(rewards)
-            dones = np.hstack(dones)        
+            dones = np.hstack(dones)
 
             intrinsic_reward = agent.compute_intrinsic_reward(
                             (states - obs_rms.mean)/np.sqrt(obs_rms.var),
@@ -192,6 +192,7 @@ if __name__ == '__main__':
                                         num_worker)
         adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
 
+        obs_rms.update(total_next_state)
         print('training')
         #agent.model.train(), agent.icm.train()
         agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),

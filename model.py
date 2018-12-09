@@ -13,25 +13,30 @@ class Flatten(nn.Module):
 class MlpActorCriticNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(MlpActorCriticNetwork, self).__init__()
-        self.com_layer1 = nn.Linear(input_size, 512)
-        self.batch_1 = nn.BatchNorm1d(512)
-        self.com_layer2 = nn.Linear(512, 512)
-        self.batch_2 = nn.BatchNorm1d(512)
-        self.com_layer3 = nn.Linear(512, 512)
-        self.batch_3 = nn.BatchNorm1d(512)
-        self.com_layer4 = nn.Linear(512, 512)
-        self.batch_4 = nn.BatchNorm1d(512)
+        self.com_layer1 = nn.Linear(input_size, 128)
+        self.batch_1 = nn.BatchNorm1d(128)
+        self.com_layer2 = nn.Linear(128, 128)
+        self.batch_2 = nn.BatchNorm1d(128)
+        self.com_layer3 = nn.Linear(128, 128)
+        self.batch_3 = nn.BatchNorm1d(128)
 
-        self.actor = nn.Linear(512, output_size)
-        self.critic = nn.Linear(512, 1)
+        self.actor_1 = nn.Linear(128, 128)
+        self.actor_2 = nn.Linear(128, 128)
+        self.actor = nn.Linear(128, output_size)
+        self.critic_1 = nn.Linear(128, 128)
+        self.critic_2 = nn.Linear(128, 128)
+        self.critic = nn.Linear(128, 1)
 
     def forward(self, x):
-        x = F.relu(self.batch_1(self.com_layer1(x)))
-        x = F.relu(self.batch_2(self.com_layer2(x)))
-        x = F.relu(self.batch_3(self.com_layer3(x)))
-        x = F.relu(self.batch_4(self.com_layer4(x)))
-        policy = self.actor(x)
-        value = self.critic(x)
+        x = F.leaky_relu(self.batch_1(self.com_layer1(x)))
+        x = F.leaky_relu(self.batch_2(self.com_layer2(x)))
+        x = F.leaky_relu(self.batch_3(self.com_layer3(x)))
+        actor_1 = F.leaky_relu(self.actor_1(x))
+        actor_2 = F.leaky_relu(self.actor_2(x))
+        policy = self.actor(actor_2)
+        critic_1 = F.leaky_relu(self.critic_1(x))
+        critic_2 = F.leaky_relu(self.critic_2(x))
+        value = self.critic(critic_2)
 
         return policy, value
 
@@ -41,41 +46,56 @@ class MlpICMModel(nn.Module):
     def __init__(self, input_size, output_size, use_cuda=True):
         super(MlpICMModel, self).__init__()
 
+        self.resnet_time = 2
         self.input_size = input_size
         self.output_size = output_size
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
         self.feature = nn.Sequential(
-            nn.Linear(self.input_size, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(self.input_size, 256),
+            nn.BatchNorm1d(256),
             nn.LeakyReLU(),
-            nn.Linear(512, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(256, 256),
+            nn.BatchNorm1d(256),
             nn.LeakyReLU(),
-            nn.Linear(512, 512),
-            nn.BatchNorm1d(512),
-            nn.LeakyReLU(),
-            nn.Linear(512, 512),
+            nn.Linear(256, 256),
         )
 
         self.inverse_net = nn.Sequential(
-            nn.Linear(512 * 2, 512),
-            nn.ReLU(),
-            nn.Linear(512, self.output_size)
+            nn.Linear(256 * 2, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, self.output_size)
         )
 
         self.residual = [nn.Sequential(
-            nn.Linear(self.output_size + 512, 512),
+            nn.Linear(self.output_size + 256, 256),
             nn.LeakyReLU(),
-            nn.Linear(512, 512),
-        ).to(self.device)] * 8
+            nn.Linear(256, 256),
+        ).to(self.device)] * 2 * self.resnet_time
 
         self.forward_net_1 = nn.Sequential(
-            nn.Linear(self.output_size + 512, 512),
-            nn.LeakyReLU()
+            nn.Linear(self.output_size + 256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256)
         )
         self.forward_net_2 = nn.Sequential(
-            nn.Linear(output_size + 512, 512),
+            nn.Linear(self.output_size + 256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, 256)
         )
 
     def forward(self, inputs):
@@ -93,7 +113,7 @@ class MlpICMModel(nn.Module):
         pred_next_state_feature_orig = self.forward_net_1(pred_next_state_feature_orig)
 
         # residual
-        for i in range(4):
+        for i in range(self.resnet_time):
             pred_next_state_feature = self.residual[i * 2](torch.cat((pred_next_state_feature_orig, action), 1))
             pred_next_state_feature_orig = self.residual[i * 2 + 1](
                 torch.cat((pred_next_state_feature, action), 1)) + pred_next_state_feature_orig
