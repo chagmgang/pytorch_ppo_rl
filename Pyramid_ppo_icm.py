@@ -8,6 +8,8 @@ from mlagents.envs import UnityEnvironment
 import numpy as np
 import time
 
+print('test after branch')
+
 class Environment(Process):
     def __init__(self, is_render, env_idx, child_conn):
         super(Environment, self).__init__()
