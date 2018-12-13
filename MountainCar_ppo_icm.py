@@ -61,7 +61,7 @@ if __name__ == '__main__':
     output_size = 3
     num_step = 256
     gamma = 0.99
-    is_render = False
+    is_render = True
 
     reward_rms = RunningMeanStd()
     obs_rms = RunningMeanStd(1, 2)
@@ -192,7 +192,7 @@ if __name__ == '__main__':
                                         num_worker)
         adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
 
-        obs_rms.update(total_next_state)
+        #obs_rms.update(total_next_state)
         print('training')
         #agent.model.train(), agent.icm.train()
         agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),

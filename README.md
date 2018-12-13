@@ -58,7 +58,23 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/mountaincar_icm_result.png" width="49%" height='300'>
 </div>
 
+# 4. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
+
+* Script : PushBlock_ppo_icm.py
+* Environment : PushBlock
+* 32 Environment, PAAC
+* orange : 0.5int + 0.5ext, blue : only int, Red : only ext
+* reward shaping for sparse-reward environment : sucess - 1, others - 0
+* The environment has not sparsed-reward property even if the reward is engineered to two categories(0, 1)
+
+###### PushBlock
+<div align="center">
+  <img src="source/push_block.gif" width="50%" height='300'>
+  <img src="source/push_block_result.png" width="49%" height='300'>
+</div>
+
 ## Reference
+
 [1] [mario_rl](https://github.com/jcwleo/mario_rl)
 
 [2] [Proximal Policy Optimization](https://arxiv.org/abs/1707.06347)
@@ -72,3 +88,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 [5] [Large-Scale Study of Curiosity-Driven Learning](https://arxiv.org/abs/1808.04355)
 
 [6] [curiosity-driven-exploration-pytorch](https://github.com/jcwleo/curiosity-driven-exploration-pytorch)
+
+[7] [ml-agents](https://github.com/Unity-Technologies/ml-agents)
+
+[8] [Unity: A General Platform for Intelligent Agents](https://arxiv.org/abs/1809.02627)

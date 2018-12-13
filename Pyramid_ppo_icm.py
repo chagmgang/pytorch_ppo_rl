@@ -189,7 +189,6 @@ if __name__ == '__main__':
         total_logging_policy = np.vstack(total_policy)
         
         total_int_reward = np.stack(total_int_reward).transpose()
-        total_int_reward *= 5
         total_reward_per_env = np.array([discounted_reward.update(reward_per_step) for reward_per_step in
                                          total_int_reward.T])
         mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)

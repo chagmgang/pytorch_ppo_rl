@@ -6,6 +6,13 @@ import numpy as np
 import math
 from torch.nn import init
 
+class Swish(nn.Module):
+    def forward(self, x):
+        return x * F.sigmoid(x)
+
+def swish(x):
+    return x * F.sigmoid(x)
+
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
@@ -13,29 +20,30 @@ class Flatten(nn.Module):
 class MlpActorCriticNetwork(nn.Module):
     def __init__(self, input_size, output_size):
         super(MlpActorCriticNetwork, self).__init__()
-        self.com_layer1 = nn.Linear(input_size, 128)
-        self.batch_1 = nn.BatchNorm1d(128)
-        self.com_layer2 = nn.Linear(128, 128)
-        self.batch_2 = nn.BatchNorm1d(128)
-        self.com_layer3 = nn.Linear(128, 128)
-        self.batch_3 = nn.BatchNorm1d(128)
+        self.com_layer1 = nn.Linear(input_size, 256)
+        self.batch_1 = nn.BatchNorm1d(256)
+        self.com_layer2 = nn.Linear(256, 256)
+        self.batch_2 = nn.BatchNorm1d(256)
+        self.com_layer3 = nn.Linear(256, 256)
+        self.batch_3 = nn.BatchNorm1d(256)
 
-        self.actor_1 = nn.Linear(128, 128)
-        self.actor_2 = nn.Linear(128, 128)
-        self.actor = nn.Linear(128, output_size)
-        self.critic_1 = nn.Linear(128, 128)
-        self.critic_2 = nn.Linear(128, 128)
-        self.critic = nn.Linear(128, 1)
+        self.actor_1 = nn.Linear(256, 256)
+        self.actor_2 = nn.Linear(256, 256)
+        self.actor = nn.Linear(256, output_size)
+        self.critic_1 = nn.Linear(256, 256)
+        self.critic_2 = nn.Linear(256, 256)
+        self.critic = nn.Linear(256, 1)
 
     def forward(self, x):
-        x = F.leaky_relu(self.batch_1(self.com_layer1(x)))
-        x = F.leaky_relu(self.batch_2(self.com_layer2(x)))
-        x = F.leaky_relu(self.batch_3(self.com_layer3(x)))
-        actor_1 = F.leaky_relu(self.actor_1(x))
-        actor_2 = F.leaky_relu(self.actor_2(x))
+        
+        x = swish(self.batch_1(self.com_layer1(x)))
+        x = swish(self.batch_2(self.com_layer2(x)))
+        x = swish(self.batch_3(self.com_layer3(x)))
+        actor_1 = swish(self.actor_1(x))
+        actor_2 = swish(self.actor_2(x))
         policy = self.actor(actor_2)
-        critic_1 = F.leaky_relu(self.critic_1(x))
-        critic_2 = F.leaky_relu(self.critic_2(x))
+        critic_1 = swish(self.critic_1(x))
+        critic_2 = swish(self.critic_2(x))
         value = self.critic(critic_2)
 
         return policy, value
@@ -46,55 +54,55 @@ class MlpICMModel(nn.Module):
     def __init__(self, input_size, output_size, use_cuda=True):
         super(MlpICMModel, self).__init__()
 
-        self.resnet_time = 2
+        self.resnet_time = 4
         self.input_size = input_size
         self.output_size = output_size
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
         self.feature = nn.Sequential(
             nn.Linear(self.input_size, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.BatchNorm1d(256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
         )
 
         self.inverse_net = nn.Sequential(
             nn.Linear(256 * 2, 256),
-            nn.LeakyReLU(),
+            nn.BatchNorm1d(256),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            nn.BatchNorm1d(256),
+            Swish(),
             nn.Linear(256, self.output_size)
         )
 
         self.residual = [nn.Sequential(
             nn.Linear(self.output_size + 256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
         ).to(self.device)] * 2 * self.resnet_time
 
         self.forward_net_1 = nn.Sequential(
             nn.Linear(self.output_size + 256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256)
         )
         self.forward_net_2 = nn.Sequential(
             nn.Linear(self.output_size + 256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256),
-            nn.LeakyReLU(),
+            Swish(),
             nn.Linear(256, 256)
         )
 
