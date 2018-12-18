@@ -139,7 +139,7 @@ while True:
                                     num_step,
                                     num_worker)
 
-    adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
+    adv = (adv - np.mean(adv)) / (np.std(adv) + 1e-8)
 
     ext_target, ext_adv = make_train_data_icm(total_reward,
                                             total_done, total_values, gamma, num_step, num_worker)

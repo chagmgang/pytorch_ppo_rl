@@ -145,7 +145,7 @@ while True:
     ext_target, ext_adv = make_train_data_icm(total_reward,
                                             total_done, total_values, gamma, num_step, num_worker)
 
-    int_ratio = 1
+    int_ratio = 0.5
     adv = adv * int_ratio + ext_adv * (1-int_ratio)
     target = target * int_ratio + ext_target * (1-int_ratio)
 

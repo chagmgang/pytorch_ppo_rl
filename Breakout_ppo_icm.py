@@ -144,7 +144,7 @@ def main():
 
         # Step 1. n-step rollout
         for _ in range(num_step):
-            actions, value, policy = agent.get_action(np.float32(states) - obs_rms.mean / np.sqrt(obs_rms.var))
+            actions, value, policy = agent.get_action((np.float32(states) - obs_rms.mean) / np.sqrt(obs_rms.var))
 
             for parent_conn, action in zip(parent_conns, actions):
                 parent_conn.send(action)
@@ -195,7 +195,7 @@ def main():
                 sample_i_rall = 0
 
         # calculate last next value
-        _, value, _ = agent.get_action(np.float32(states) - obs_rms.mean / np.sqrt(obs_rms.var))
+        _, value, _ = agent.get_action((np.float32(states) - obs_rms.mean) / np.sqrt(obs_rms.var))
         total_values.append(value)
         # --------------------------------------------------
 
@@ -237,8 +237,8 @@ def main():
 
         # Step 5. Training!
         print('training')
-        agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),
-                          np.float32(total_next_state) - obs_rms.mean / np.sqrt(obs_rms.var),
+        agent.train_model((np.float32(total_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
+                          (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                           target, total_action,
                           adv,
                           total_policy)
