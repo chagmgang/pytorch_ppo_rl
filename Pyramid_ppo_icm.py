@@ -42,7 +42,7 @@ obs_rms.update(next_obs)
 print('End to initialize')
 
 writer = SummaryWriter()
-writer_iter = 2278
+writer_iter = 22780000000
 global_update = 0
 global_step = 0
 sample_i_rall = 0
@@ -66,7 +66,6 @@ while True:
 
         obs = env_info.vector_observations
         reward = env_info.rewards
-        reward = np.clip(reward, 0, 1)
         done = env_info.local_done
 
         for o, r, d in zip(obs, reward, done):
@@ -103,13 +102,13 @@ while True:
             sample_episode += 1
             if sample_episode < writer_iter:
                 writer.add_scalar('data/reward_per_epi', sample_rall, sample_episode)
-                writer.add_scalar('data/int_reward_per_epi', sample_i_rall, sample_episode)
+                writer.add_scalar('data/int_reward_per_epi', sample_i_rall / np.sqrt(reward_rms.var), sample_episode)
             print("[Episode {}] rall: {}  i_: {}".format(
                     sample_episode, sample_rall, sample_i_rall))
             sample_i_rall = 0
             sample_rall = 0
 
-    _, value, _ = agent.get_action(np.float32(states) - obs_rms.mean / np.sqrt(obs_rms.var))
+    _, value, _ = agent.get_action((np.float32(states) - obs_rms.mean) / np.sqrt(obs_rms.var))
     total_values.append(value)
 
     total_state = np.stack(total_state).transpose([1, 0, 2]).reshape([-1, input_size])
@@ -126,6 +125,7 @@ while True:
     mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
     reward_rms.update_from_moments(mean, std ** 2, count)
 
+    #total_int_reward -= reward_rms.mean
     total_int_reward /= np.sqrt(reward_rms.var)
     
     if sample_episode < writer_iter:
@@ -139,19 +139,20 @@ while True:
                                     num_step,
                                     num_worker)
 
-    adv = (adv - np.mean(adv) / np.std(adv) + 1e-8)
+    adv = ((adv - np.mean(adv)) / (np.std(adv) + 1e-8))
+    #adv = (adv / np.std(adv) + 1e-8)
 
     ext_target, ext_adv = make_train_data_icm(total_reward,
                                             total_done, total_values, gamma, num_step, num_worker)
 
-    int_ratio = 0
+    int_ratio = 1
     adv = adv * int_ratio + ext_adv * (1-int_ratio)
     target = target * int_ratio + ext_target * (1-int_ratio)
 
     #obs_rms.update(total_next_state)
     #print(obs_rms.count)
     print('training')
-    agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),
-                        np.float32(total_next_state) - obs_rms.mean / np.sqrt(obs_rms.var),
+    agent.train_model((np.float32(total_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
+                        (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                         target, total_action,
                         adv, total_policy)

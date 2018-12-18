@@ -159,7 +159,7 @@ if __name__ == '__main__':
                 sample_i_rall = 0
                 sample_rall = 0
 
-        _, value, _ = agent.get_action(np.float32(states) - obs_rms.mean / np.sqrt(obs_rms.var))
+        _, value, _ = agent.get_action((np.float32(states) - obs_rms.mean) / np.sqrt(obs_rms.var))
         total_values.append(value)
 
         total_state = np.stack(total_state).transpose([1, 0, 2]).reshape([-1, 2])
@@ -195,7 +195,7 @@ if __name__ == '__main__':
         #obs_rms.update(total_next_state)
         print('training')
         #agent.model.train(), agent.icm.train()
-        agent.train_model(np.float32(total_state) - obs_rms.mean / np.sqrt(obs_rms.var),
-                          np.float32(total_next_state) - obs_rms.mean / np.sqrt(obs_rms.var),
+        agent.train_model((np.float32(total_state) - obs_rms.mean )/ np.sqrt(obs_rms.var),
+                          (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                           target, total_action,
                           adv, total_policy)
