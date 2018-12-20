@@ -198,36 +198,3 @@ if __name__ == '__main__':
                           (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                           target, total_action,
                           adv, total_policy)
-        '''
-        total_int_reward = np.stack(total_int_reward).transpose()
-        total_reward_per_env = np.array([discounted_reward.update(reward_per_step) for reward_per_step in
-                                         total_int_reward.T])
-        mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
-        reward_rms.update_from_moments(mean, std ** 2, count)
-
-        total_int_reward /= np.sqrt(reward_rms.var)
-        
-        writer.add_scalar('data/int_reward_per_epi', np.sum(total_int_reward)/num_worker, sample_episode)
-        writer.add_scalar('data/int_reward_per_rollout', np.sum(total_int_reward) / num_worker, global_update)
-        writer.add_scalar('data/max_prob', softmax(total_logging_policy).max(1).mean(), sample_episode)
-
-        print(total_int_reward.shape)
-        print(total_values.shape)
-
-        target, adv = make_train_data_icm(total_int_reward,
-                                        np.zeros_like(total_int_reward),
-                                        total_values,
-                                        gamma,
-                                        num_step,
-                                        num_worker)
-
-        adv = (adv - np.mean(adv)) / (np.std(adv) + 1e-8)
-
-        #obs_rms.update(total_next_state)
-        print('training')
-        #agent.model.train(), agent.icm.train()
-        agent.train_model((np.float32(total_state) - obs_rms.mean )/ np.sqrt(obs_rms.var),
-                          (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
-                          target, total_action,
-                          adv, total_policy)
-        '''

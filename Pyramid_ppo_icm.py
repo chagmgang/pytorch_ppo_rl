@@ -149,3 +149,5 @@ while True:
                         (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                         target, total_action,
                         adv, total_policy)
+
+    torch.save(agent.model, 'model.pt')
