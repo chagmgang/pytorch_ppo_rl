@@ -73,6 +73,20 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/push_block_result.png" width="49%" height='300'>
 </div>
 
+# 5. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
+
+* Script : Pyramid_ppo_icm.py
+* Environment : Pyramid
+* 16 Environment, PAAC
+* orange : only ext, blue : 0.01int + 0.99ext
+
+###### Pyramid
+<div align="center">
+  <img src="source/pyramid.gif" width="100%" height='300'>
+  <img src="source/pyramid_result1.png" width="49%" height='300'>
+  <img src="source/pyramid_result2.png" width="49%" height='300'>
+</div>
+
 ## Reference
 
 [1] [mario_rl](https://github.com/jcwleo/mario_rl)
@@ -92,3 +106,5 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 [7] [ml-agents](https://github.com/Unity-Technologies/ml-agents)
 
 [8] [Unity: A General Platform for Intelligent Agents](https://arxiv.org/abs/1809.02627)
+
+[9] [Solving sparse-reward tasks with Curiosity](https://blogs.unity3d.com/kr/2018/06/26/solving-sparse-reward-tasks-with-curiosity/)

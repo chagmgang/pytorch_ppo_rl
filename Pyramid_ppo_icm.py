@@ -42,7 +42,7 @@ obs_rms.update(next_obs)
 print('End to initialize')
 
 writer = SummaryWriter()
-writer_iter = 22780000000
+writer_iter = 800
 global_update = 0
 global_step = 0
 sample_i_rall = 0
@@ -50,10 +50,13 @@ sample_episode = 0
 sample_env_idx = 0
 sample_rall = 0
 states = np.zeros([num_worker, input_size])
+int_coef = 0.01
+large_scale_version = True
+
 while True:
     total_state, total_reward, total_done, total_next_state, \
     total_action, total_int_reward, total_next_obs, total_values,\
-    total_policy = [], [], [], [], [], [], [], [], []
+    total_policy, total_combine_reward = [], [], [], [], [], [], [], [], [], []
     global_step += (num_step * num_worker)
     global_update += 1
 
@@ -84,9 +87,12 @@ while True:
 
         intrinsic_reward = np.hstack(intrinsic_reward)
 
+        combine_reward = (1-int_coef) * rewards + int_coef * intrinsic_reward
+
         sample_i_rall += intrinsic_reward[sample_env_idx]
         sample_rall += rewards[sample_env_idx]
 
+        total_combine_reward.append(combine_reward)
         total_int_reward.append(intrinsic_reward)
         total_state.append(states)
         total_next_state.append(next_states)
@@ -118,41 +124,28 @@ while True:
     total_done = np.stack(total_done).transpose()
     total_values = np.stack(total_values).transpose()
     total_logging_policy = np.vstack(total_policy)
-
-    total_int_reward = np.stack(total_int_reward).transpose()
+    total_combine_reward = np.stack(total_combine_reward).transpose()
+    
     total_reward_per_env = np.array([discounted_reward.update(reward_per_step) for reward_per_step in
-                                        total_int_reward.T])
+                                         total_combine_reward.T])
     mean, std, count = np.mean(total_reward_per_env), np.std(total_reward_per_env), len(total_reward_per_env)
     reward_rms.update_from_moments(mean, std ** 2, count)
 
-    #total_int_reward -= reward_rms.mean
     total_int_reward /= np.sqrt(reward_rms.var)
-    
-    if sample_episode < writer_iter:
-        writer.add_scalar('data/int_reward_per_rollout', np.sum(total_int_reward) / num_worker, global_update)
-        writer.add_scalar('data/max_prob', softmax(total_logging_policy).max(1).mean(), sample_episode)
+    total_combine_reward /= np.sqrt(reward_rms.var)
 
-    target, adv = make_train_data_icm(total_int_reward,
-                                    np.zeros_like(total_int_reward),
-                                    total_values,
-                                    gamma,
-                                    num_step,
-                                    num_worker)
+    writer.add_scalar('data/int_reward_per_rollout', np.sum(total_int_reward) / num_worker, global_update)
+    writer.add_scalar('data/combine_reward_per_rollout', np.sum(total_combine_reward) / num_worker, global_update)
+    writer.add_scalar('data/max_prob', softmax(total_logging_policy).max(1).mean(), sample_episode)
 
-    adv = ((adv - np.mean(adv)) / (np.std(adv) + 1e-8))
-    #adv = (adv / np.std(adv) + 1e-8)
+    if large_scale_version: flag = np.zeros_like(total_combine_reward)
+    else: flag = total_done
 
-    ext_target, ext_adv = make_train_data_icm(total_reward,
-                                            total_done, total_values, gamma, num_step, num_worker)
+    target ,adv = make_train_data_icm(total_combine_reward, flag, total_values, gamma, num_step, num_worker)
+    adv = (adv - np.mean(adv)) / (np.std(adv) + 1e-8)
 
-    int_ratio = 0.5
-    adv = adv * int_ratio + ext_adv * (1-int_ratio)
-    target = target * int_ratio + ext_target * (1-int_ratio)
-
-    #obs_rms.update(total_next_state)
-    #print(obs_rms.count)
     print('training')
-    agent.train_model((np.float32(total_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
+    agent.train_model((np.float32(total_state) - obs_rms.mean )/ np.sqrt(obs_rms.var),
                         (np.float32(total_next_state) - obs_rms.mean) / np.sqrt(obs_rms.var),
                         target, total_action,
                         adv, total_policy)
