@@ -29,7 +29,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/breakout_result.png" width="50%" height='300'>
 </div>
 
-# 3. Multi-processing CNN Proximal Policy Opitimization with Intrinsic Curiosity Module
+## 3. Multi-processing CNN Proximal Policy Opitimization with Intrinsic Curiosity Module
 
 * Script : Breakout_ppo_icm.py
 * Environment : BreakoutNoFrameskip-v4(handled by custom environment)
@@ -45,7 +45,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/breakout_result_icm.png" width="50%" height='300'>
 </div>
 
-# 3. Multi-processing Mlp Proximal Policy Opitimization with Intrinsic Curiosity Module
+## 4. Multi-processing Mlp Proximal Policy Opitimization with Intrinsic Curiosity Module
 
 * Script : MountainCar_ppo_icm.py
 * Environment : MountainCart-v0
@@ -58,7 +58,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/mountaincar_icm_result.png" width="49%" height='300'>
 </div>
 
-# 4. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
+## 5. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
 
 * Script : PushBlock_ppo_icm.py
 * Environment : PushBlock
@@ -73,7 +73,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
   <img src="source/push_block_result.png" width="49%" height='300'>
 </div>
 
-# 5. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
+## 6. Unity MLAgents Mlp Proximal Policy Optimization with Intrinsic Curiosity Module
 
 * Script : Pyramid_ppo_icm.py
 * Environment : Pyramid
