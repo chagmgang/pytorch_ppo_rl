@@ -83,6 +83,7 @@ The framework used in this Repository is Pytorch. The multi-processing method is
 ###### Pyramid
 <div align="center">
   <img src="source/pyramid.gif" width="100%" height='300'>
+  <img src="source/pyramid1.gif" width="100%" height='300'>
   <img src="source/pyramid_result1.png" width="49%" height='300'>
   <img src="source/pyramid_result2.png" width="49%" height='300'>
 </div>
